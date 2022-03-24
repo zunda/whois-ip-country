@@ -14,8 +14,12 @@ class IPv4Addr
     IPv4Addr.new(decimals).numeric
   end
 
-  def IPv4Addr.prefixBits(min, max)
-    32 - (IPv4Addr.numeric(min) ^ IPv4Addr.numeric(max)).bit_length
+  def IPv4Addr.cidr(min, max)
+    x = IPv4Addr.numeric(min)
+    y = IPv4Addr.numeric(max)
+    x, y = y, x if x > y
+    prefix = 32 - (x ^ y).bit_length
+    "#{min}/#{prefix}"
   end
 end
 
@@ -33,10 +37,8 @@ ARGF.each do |text|
       # guess address range
       min, max = r.scan(/^#{re_inetnum}.*?(#{re_ipv4})\s*-\s*(#{re_ipv4})/i).flatten
       if max
-        max, min = min, max if IPv4Addr.numeric(min) > IPv4Addr.numeric(max)
-        cidr = "#{min}/#{IPv4Addr.prefixBits(min, max)}"
-      end
-      unless cidr
+        cidr = IPv4Addr.cidr(min, max)
+      else
         cidr = r.scan(/^#{re_inetnum}.*?(#{re_ipv4}\/\d+)/i).flatten.first
       end
 
