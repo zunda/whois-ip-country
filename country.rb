@@ -43,12 +43,13 @@ ARGF.each do |text|
       # guess country
       country = r.scan(/NetName:\s*PRIVATE-ADDRESS-.*(RFC\d+)/i).flatten.first
       unless country
-        c = r.scan(/^country:\s*(.+)$/i).flatten
+        c = r.scan(/^country:\s*(\w{2})$/i).flatten
         country = c.reject{|e| e == "EU"}.first || c.detect{|e| e == "EU"}
       end
       unless country
         country = "KR" if r =~ /KRNIC/i
       end
+      country.upcase!
 
       puts "#{ip}\t#{cidr}\t#{country}"
       if not cidr or not country
