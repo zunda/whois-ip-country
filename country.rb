@@ -39,7 +39,9 @@ ARGF.each do |text|
     end
 
     # guess country
-    country = r.scan(/^country:\s*(.+)$/i).flatten.first
+    unless country = r.scan(/NetName:\s*PRIVATE-ADDRESS-.*(RFC\d+)/i).flatten.first
+      country = r.scan(/^country:\s*(.+)$/i).flatten.first
+    end
     unless country
       country = "KR" if r =~ /KRNIC/i
     end
