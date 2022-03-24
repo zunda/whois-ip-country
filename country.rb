@@ -15,7 +15,7 @@ class IPv4Addr
   end
 
   def IPv4Addr.prefixBits(min, max)
-    33 - (IPv4Addr.numeric(min) ^ IPv4Addr.numeric(max)).bit_length
+    32 - (IPv4Addr.numeric(min) ^ IPv4Addr.numeric(max)).bit_length
   end
 end
 
