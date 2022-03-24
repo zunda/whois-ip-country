@@ -59,6 +59,8 @@ ARGF.each do |text|
       end
     rescue Timeout::Error
       puts "Timed out looking up whois for #{ip}"
+    rescue Errno::ECONNREFUSED
+      puts $!.message
     end
     sleep 1
   end
