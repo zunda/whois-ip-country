@@ -20,7 +20,7 @@ class IPv4Addr
 end
 
 re_ipv4 = /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/
-re_inetnum = /(?:route|cidr|inetnum|IPv4 Address)\s*:/
+re_inetnum = /(?:route|cidr|inetnum|IPv4 Address)\s*:/i
 
 whois = Whois::Client.new
 ARGF.each do |text|
