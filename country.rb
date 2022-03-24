@@ -40,8 +40,10 @@ ARGF.each do |text|
     end
 
     # guess country
-    unless country = r.scan(/NetName:\s*PRIVATE-ADDRESS-.*(RFC\d+)/i).flatten.first
-      country = r.scan(/^country:\s*(.+)$/i).flatten.first
+    country = r.scan(/NetName:\s*PRIVATE-ADDRESS-.*(RFC\d+)/i).flatten.first
+    unless country
+      c = r.scan(/^country:\s*(.+)$/i).flatten
+      country = c.reject{|e| e == "EU"}.first || c.detect{|e| e == "EU"}
     end
     unless country
       country = "KR" if r =~ /KRNIC/i
