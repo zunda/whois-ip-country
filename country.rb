@@ -13,6 +13,8 @@ ARGF.each do |text|
   ip = text.scan(re_ipv4).first
   if ip
     r = whois.lookup(ip).content
+
+    # guess address range
     cidr = r.scan(/^#{re_inetnum}.*?(#{re_ipv4}\/\d+)/i).flatten.first
     unless cidr
       min, max = r.scan(/^#{re_inetnum}.*?(#{re_ipv4})\s*-\s*(#{re_ipv4})/i).flatten
@@ -20,7 +22,12 @@ ARGF.each do |text|
         cidr = "#{min} - #{max}"
       end
     end
+
+    # guess country
     country = r.scan(/^country:\s*(.+)$/i).flatten.first
+    unless country
+      country = "KR" if r =~ /KRNIC/i
+    end
 
     if cidr and country
       puts "#{ip}\t#{cidr}\t#{country}"
