@@ -27,31 +27,35 @@ ARGF.each do |text|
   next if text =~ /^#/
   ip = text.scan(re_ipv4).first
   if ip
-    r = whois.lookup(ip).content
+    begin
+      r = whois.lookup(ip).content
 
-    # guess address range
-    min, max = r.scan(/^#{re_inetnum}.*?(#{re_ipv4})\s*-\s*(#{re_ipv4})/i).flatten
-    if max
-      max, min = min, max if IPv4Addr.numeric(min) > IPv4Addr.numeric(max)
-      cidr = "#{min}/#{IPv4Addr.prefixBits(min, max)}"
-    end
-    unless cidr
-      cidr = r.scan(/^#{re_inetnum}.*?(#{re_ipv4}\/\d+)/i).flatten.first
-    end
+      # guess address range
+      min, max = r.scan(/^#{re_inetnum}.*?(#{re_ipv4})\s*-\s*(#{re_ipv4})/i).flatten
+      if max
+        max, min = min, max if IPv4Addr.numeric(min) > IPv4Addr.numeric(max)
+        cidr = "#{min}/#{IPv4Addr.prefixBits(min, max)}"
+      end
+      unless cidr
+        cidr = r.scan(/^#{re_inetnum}.*?(#{re_ipv4}\/\d+)/i).flatten.first
+      end
 
-    # guess country
-    country = r.scan(/NetName:\s*PRIVATE-ADDRESS-.*(RFC\d+)/i).flatten.first
-    unless country
-      c = r.scan(/^country:\s*(.+)$/i).flatten
-      country = c.reject{|e| e == "EU"}.first || c.detect{|e| e == "EU"}
-    end
-    unless country
-      country = "KR" if r =~ /KRNIC/i
-    end
+      # guess country
+      country = r.scan(/NetName:\s*PRIVATE-ADDRESS-.*(RFC\d+)/i).flatten.first
+      unless country
+        c = r.scan(/^country:\s*(.+)$/i).flatten
+        country = c.reject{|e| e == "EU"}.first || c.detect{|e| e == "EU"}
+      end
+      unless country
+        country = "KR" if r =~ /KRNIC/i
+      end
 
-    puts "#{ip}\t#{cidr}\t#{country}"
-    if not cidr or not country
-      puts r
+      puts "#{ip}\t#{cidr}\t#{country}"
+      if not cidr or not country
+        puts r
+      end
+    rescue Timeout::Error
+      puts "Timed out looking up whois for #{ip}"
     end
     sleep 1
   end
