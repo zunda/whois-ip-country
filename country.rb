@@ -20,7 +20,7 @@ class IPv4Addr
 end
 
 re_ipv4 = /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/
-re_inetnum = /(?:route|cidr|inetnum|IPv4 Address)\s*:/i
+re_inetnum = /(?:route|cidr|inetnum|IPv4 Address|NetRange)\s*:/i
 
 whois = Whois::Client.new
 ARGF.each do |text|
@@ -30,12 +30,13 @@ ARGF.each do |text|
     r = whois.lookup(ip).content
 
     # guess address range
-    cidr = r.scan(/^#{re_inetnum}.*?(#{re_ipv4}\/\d+)/i).flatten.first
+    min, max = r.scan(/^#{re_inetnum}.*?(#{re_ipv4})\s*-\s*(#{re_ipv4})/i).flatten
+    if max
+      max, min = min, max if IPv4Addr.numeric(min) > IPv4Addr.numeric(max)
+      cidr = "#{min}/#{IPv4Addr.prefixBits(min, max)}"
+    end
     unless cidr
-      min, max = r.scan(/^#{re_inetnum}.*?(#{re_ipv4})\s*-\s*(#{re_ipv4})/i).flatten
-      if max
-        cidr = "#{min}/#{IPv4Addr.prefixBits(min, max)}"
-      end
+      cidr = r.scan(/^#{re_inetnum}.*?(#{re_ipv4}\/\d+)/i).flatten.first
     end
 
     # guess country
