@@ -46,9 +46,8 @@ ARGF.each do |text|
       country = "KR" if r =~ /KRNIC/i
     end
 
-    if cidr and country
-      puts "#{ip}\t#{cidr}\t#{country}"
-    else
+    puts "#{ip}\t#{cidr}\t#{country}"
+    if not cidr or not country
       puts r
     end
     sleep 1
