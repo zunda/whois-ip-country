@@ -4,6 +4,21 @@
 #
 require 'whois'
 
+class IPv4Addr
+  attr_reader :numeric
+  def initialize(decimals)
+    @numeric =  decimals.split(/\./).map{|e| Integer(e)}.inject(0){|s, e| s*256 + e}
+  end
+
+  def IPv4Addr.numeric(decimals)
+    IPv4Addr.new(decimals).numeric
+  end
+
+  def IPv4Addr.prefixBits(min, max)
+    33 - (IPv4Addr.numeric(min) ^ IPv4Addr.numeric(max)).bit_length
+  end
+end
+
 re_ipv4 = /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/
 re_inetnum = /(?:route|cidr|inetnum|IPv4 Address)\s*:/
 
@@ -19,7 +34,7 @@ ARGF.each do |text|
     unless cidr
       min, max = r.scan(/^#{re_inetnum}.*?(#{re_ipv4})\s*-\s*(#{re_ipv4})/i).flatten
       if max
-        cidr = "#{min} - #{max}"
+        cidr = "#{min}/#{IPv4Addr.prefixBits(min, max)}"
       end
     end
 
