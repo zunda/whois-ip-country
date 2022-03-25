@@ -23,56 +23,63 @@ class IPv4Addr
   end
 end
 
-re_ipv4 = /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/
-re_inetnum = /(?:route|cidr|inetnum|IPv4 Address|NetRange)\s*:/i
+class WhoisCountries
+  RE_ipv4 = /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/
+  RE_inetnum = /(?:route|cidr|inetnum|IPv4 Address|NetRange)\s*:/i
 
-whois = Whois::Client.new
-whois_cache = Hash.new
+  def initialize
+    @whois = Whois::Client.new
+    @cache = Hash.new
+  end
+
+  def country_for(ip)
+    x = IPAddr.new(ip)
+    y = @cache.keys.detect{|cidr| cidr.include?(x)}
+    return @cache[y] if y
+
+    # lookup
+    r = @whois.lookup(ip).content
+
+    # guess address range
+    min, max = r.scan(/^#{RE_inetnum}.*?(#{RE_ipv4})\s*-\s*(#{RE_ipv4})/i).flatten
+    if max
+      cidr = IPv4Addr.cidr(min, max)
+    else
+      cidr = r.scan(/^#{RE_inetnum}.*?(#{RE_ipv4}\/\d+)/i).flatten.first
+    end
+    unless cidr
+      raise RuntimeError, "CIDR not found from the whois response for #{ip}\n#{r}"
+    end
+
+    # guess country
+    country = r.scan(/NetName:\s*PRIVATE-ADDRESS-.*(RFC\d+)/i).flatten.first
+    unless country
+      c = r.scan(/^country:\s*(\w{2})$/i).flatten
+      country = c.reject{|e| e == "EU"}.first || c.detect{|e| e == "EU"}
+    end
+    unless country
+      country = "KR" if r =~ /KRNIC/i
+    end
+    unless cidr
+      raise RuntimeError, "Country not found from the whois response for #{ip}\n#{r}"
+    end
+
+    @cache[IPAddr.new(cidr)] = country.upcase
+    return country
+  end
+end
+
+w = WhoisCountries.new
 ARGF.each do |text|
   next if text =~ /^#/
-  ip = text.scan(re_ipv4).first
+  ip = text.scan(WhoisCountries::RE_ipv4).first
   if ip
-    x = IPAddr.new(ip)
-    y = whois_cache.keys.detect{|cidr| cidr.include?(x)}
-    if y
-      cidr = "#{y.to_s}/#{y.prefix}"
-      country = whois_cache[y]
-    else
-      begin
-        r = whois.lookup(ip).content
-        sleep 1
-
-        # guess address range
-        min, max = r.scan(/^#{re_inetnum}.*?(#{re_ipv4})\s*-\s*(#{re_ipv4})/i).flatten
-        if max
-          cidr = IPv4Addr.cidr(min, max)
-        else
-          cidr = r.scan(/^#{re_inetnum}.*?(#{re_ipv4}\/\d+)/i).flatten.first
-        end
-
-        # guess country
-        country = r.scan(/NetName:\s*PRIVATE-ADDRESS-.*(RFC\d+)/i).flatten.first
-        unless country
-          c = r.scan(/^country:\s*(\w{2})$/i).flatten
-          country = c.reject{|e| e == "EU"}.first || c.detect{|e| e == "EU"}
-        end
-        unless country
-          country = "KR" if r =~ /KRNIC/i
-        end
-        country&.upcase!
-      
-        if cidr and country
-          whois_cache[IPAddr.new(cidr)] = country
-        else
-          puts "Could not parse the whois response for #{ip}"
-          puts r
-        end
-      rescue Timeout::Error
-        puts "Timed out looking up whois for #{ip}"
-      rescue Errno::ECONNREFUSED
-        puts $!.message
-      end
+    begin
+      puts "#{ip}\t#{w.country_for(ip)}"
+    rescue Timeout::Error
+      $stderr.puts "Timed out looking up whois for #{ip}"
+    rescue Errno::ECONNREFUSED, RuntimeError
+      $stderr.puts $!.message
     end
-    puts "#{ip}\t#{cidr}\t#{country}"
   end
 end
