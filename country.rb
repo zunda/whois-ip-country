@@ -78,9 +78,9 @@ end
 w = WhoisCountries.new
 ARGF.each do |text|
   next if text =~ /^#/
-  text.scan(WhoisCountries::RE_ipv4).each do |ip|
+  if ip = text.scan(WhoisCountries::RE_ipv4).first
     begin
-      puts "#{ip}\t#{w.country_for(ip)}"
+      puts "#{w.country_for(ip)}\t#{text}"
     rescue Timeout::Error
       $stderr.puts "Timed out looking up whois for #{ip}"
     rescue Errno::ECONNREFUSED, RuntimeError
