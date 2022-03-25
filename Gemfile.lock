@@ -1,14 +1,12 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    netaddr (1.5.1)
     whois (5.1.0)
 
 PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  netaddr (< 2.0)
   whois (~> 5.1)
 
 BUNDLED WITH
