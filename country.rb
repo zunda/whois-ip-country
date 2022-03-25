@@ -66,20 +66,19 @@ class WhoisCountries
     end
 
     # guess country
-    country = r.scan(/NetName:\s*PRIVATE-ADDRESS-.*(RFC\d+)/i).flatten.first
-    unless country
-      c = r.scan(/^country:\s*(\w{2})$/i).flatten
-      country = c.reject{|e| e == "EU"}.first&.upcase || c.detect{|e| e == "EU"}
+    c = r.scan(/NetName:\s*PRIVATE-ADDRESS-.*(RFC\d+)/i).flatten
+    if c.empty?
+      c = r.scan(/^country:\s*(\w{2})$/i).flatten.map{|e| e.upcase}.sort.uniq
     end
-    unless country
-      country = "KR" if r =~ /KRNIC/i
+    if c.empty?
+      c = ["KR"] if r =~ /KRNIC/i
     end
-    unless country
+    if c.empty?
       raise RuntimeError, "Country not found from the whois response for #{ip}\n#{r}"
     end
 
-    @cache[cidr] = country
-    return country
+    @cache[cidr] = c
+    return c
   end
 end
 
@@ -88,7 +87,7 @@ ARGF.each do |text|
   next if text =~ /^#/
   if ip = text.scan(WhoisCountries::RE_ipv4).first
     begin
-      puts "#{w.country_for(ip)}\t#{text}"
+      puts "#{w.country_for(ip).join(",")}\t#{text}"
     rescue Timeout::Error
       $stderr.puts "Timed out looking up whois for #{ip}"
     rescue Errno::ECONNREFUSED, RuntimeError
