@@ -1,6 +1,10 @@
 #!/usr/bin/ruby
 #
-# usage: echo 121.201.107.32 | bundle exec ruby country.rb
+# usage: echo 8.8.8.8 | bundle exec ruby country.rb
+# looks up whois for IPv4 addresses to find registered country
+#
+# Copyright (c) 2022 zunda <zundan at gmail.com>
+# Published under MIT license
 #
 require 'whois'
 
