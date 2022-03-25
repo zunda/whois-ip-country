@@ -76,8 +76,7 @@ end
 w = WhoisCountries.new
 ARGF.each do |text|
   next if text =~ /^#/
-  ip = text.scan(WhoisCountries::RE_ipv4).first
-  if ip
+  text.scan(WhoisCountries::RE_ipv4).each do |ip|
     begin
       puts "#{ip}\t#{w.country_for(ip)}"
     rescue Timeout::Error
