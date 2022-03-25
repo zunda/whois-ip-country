@@ -34,6 +34,7 @@ class WhoisCountries
   def initialize
     @whois = Whois::Client.new
     @cache = Hash.new
+    @wait = 1 # sec
   end
 
   def country_for(ip)
@@ -43,6 +44,7 @@ class WhoisCountries
 
     # lookup
     r = @whois.lookup(ip).content
+    sleep @wait
 
     # guess address range
     min, max = r.scan(/^#{RE_inetnum}.*?(#{RE_ipv4})\s*-\s*(#{RE_ipv4})/i).flatten
