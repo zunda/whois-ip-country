@@ -4,6 +4,7 @@ GEM
     whois (5.1.0)
 
 PLATFORMS
+  x86_64-darwin-20
   x86_64-linux
 
 DEPENDENCIES
