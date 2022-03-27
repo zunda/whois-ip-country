@@ -43,6 +43,7 @@ class WhoisCountries
   def initialize
     @whois = Whois::Client.new
     @cache = Hash.new
+    @cache[IPv4Cidr.new("250.0.0.0", 8)] = ["RFC1112"]
     @wait = 1 # sec
   end
 
@@ -51,7 +52,11 @@ class WhoisCountries
     return @cache[x] if x
 
     # lookup
-    r = @whois.lookup(ip).content
+    begin
+      r = @whois.lookup(ip).content
+    rescue Whois::AllocationUnknown
+      return @cache[IPv4Cidr.new(ip, 32)] = ["Unknown"]
+    end
     sleep @wait
 
     # guess address range
