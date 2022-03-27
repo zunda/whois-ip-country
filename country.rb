@@ -38,7 +38,7 @@ end
 
 class WhoisCountries
   RE_ipv4 = /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/
-  RE_inetnum = /(?:route|cidr|inetnum|IPv4 Address|NetRange)\s*:/i
+  RE_inetnum = /(?:route|cidr|inetnum|IPv4 Address|NetRange|Netblock)\s*:/i
 
   def initialize
     @whois = Whois::Client.new
@@ -55,11 +55,14 @@ class WhoisCountries
     sleep @wait
 
     # guess address range
-    min, max = r.scan(/^#{RE_inetnum}.*?(#{RE_ipv4})\s*-\s*(#{RE_ipv4})/i).flatten
+    min, max = r.scan(/\s*#{RE_inetnum}.*?(#{RE_ipv4})\s*-\s*(#{RE_ipv4})/i).flatten
     if max
       cidr = IPv4Cidr.cidr(min, max)
     else
-      cidr = IPv4Cidr.new(*r.scan(/^#{RE_inetnum}.*?(?:(#{RE_ipv4})\/(\d+))/i).first)
+      addr, prefix = r.scan(/\s*#{RE_inetnum}.*?(?:(#{RE_ipv4})\/(\d+))/i).first
+      if prefix
+        cidr = IPv4Cidr.new(addr, prefix)
+      end
     end
     unless cidr
       raise RuntimeError, "CIDR not found from the whois response for #{ip}\n#{r}"
@@ -71,7 +74,12 @@ class WhoisCountries
       c = r.scan(/^country:\s*(\w{2})$/i).flatten.map{|e| e.upcase}.sort.uniq
     end
     if c.empty?
-      c = ["KR"] if r =~ /KRNIC/i
+      case r
+      when /KRNIC/i
+        c = ["KR"]
+      when /Netname: HINET-NET/i
+        c = ["TW"]
+      end
     end
     if c.empty?
       raise RuntimeError, "Country not found from the whois response for #{ip}\n#{r}"
