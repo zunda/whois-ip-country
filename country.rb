@@ -37,7 +37,7 @@ class IPv4Cidr
 end
 
 class WhoisCountries
-  RE_ipv4 = /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/
+  RE_ipv4 = /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?![\d\.])/
   RE_inetnum = /(?:route|cidr|inetnum|IPv4 Address|NetRange|Netblock)\s*:/i
 
   def initialize
