@@ -84,6 +84,8 @@ class WhoisCountries
         c = ["KR"]
       when /Netname: HINET-NET/i
         c = ["TW"]
+      when /TELEFONICA BR/i
+        c = ["BR"]
       end
     end
     if c.empty?
