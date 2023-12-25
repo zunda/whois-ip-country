@@ -98,11 +98,15 @@ class WhoisCountries
 end
 
 w = WhoisCountries.new
+c = Hash.new{0}
 ARGF.each do |text|
   next if text =~ /^#/
   if ip = text.scan(WhoisCountries::RE_ipv4).first
     begin
-      puts "#{w.country_for(ip).join(",")}\t#{text}"
+      countries = w.country_for(ip).sort.join(",")
+      count = text.scan(/\s+(\d+)\s+Time/i).flatten&.first&.to_i || 1
+      c[countries] += count
+      puts "#{countries}\t#{text}"
     rescue Timeout::Error
       $stderr.puts "Timed out looking up whois for #{ip}"
     rescue Errno::ECONNREFUSED, RuntimeError
@@ -110,3 +114,6 @@ ARGF.each do |text|
     end
   end
 end
+
+puts
+puts c.each_pair.sort_by{|c, n| -n}.map{|c, n| "#{c}\t#{n}"}.join("\n")
