@@ -38,7 +38,7 @@ end
 
 class WhoisCountries
   RE_ipv4 = /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?![\d\.])/
-  RE_inetnum = /(?:route|cidr|inetnum|IPv4 Address|NetRange|Netblock)\s*:/i
+  RE_inetnum = /(?:route|cidr|inetnum|IPv4 Address|NetRange|Netblock|\[Allocation\])\s*:?/i
 
   def initialize
     @whois = Whois::Client.new
@@ -86,6 +86,8 @@ class WhoisCountries
         c = ["TW"]
       when /TELEFONICA BR/i
         c = ["BR"]
+      when /\[Administrative Contact\]\s*JP/i
+        c = ["JP"]
       end
     end
     if c.empty?
